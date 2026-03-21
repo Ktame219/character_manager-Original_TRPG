@@ -39,11 +39,12 @@ function saveChars() {
 
 /** 古いセーブデータに新フィールドを補完する */
 function migrateChar(c) {
-  if (!c.origin)    c.origin    = { name: '', effect: '' };
-  if (!c.anomalies) c.anomalies = [];
-  if (!c.skills)    c.skills    = [];
+  if (!c.origin)     c.origin     = { name: '', effect: '' };
+  if (!c.anomalies)  c.anomalies  = [];
+  if (!c.skills)     c.skills     = [];
   if (!c.conditions) c.conditions = ['normal'];
-  if (!c.cur)       c.cur = { hp: 2, sp: 10, ap: 3, san: 10 };
+  if (!c.cur)        c.cur        = { hp: 2, sp: 10, ap: 3, san: 10 };
+  if (c.level == null) c.level    = 0;
   return c;
 }
 
@@ -54,6 +55,7 @@ function makeChar() {
   return {
     id:    uid(),
     name:  '', job: '', gender: '',
+    level: 0,
     stats: { str: 10, dex: 10, vit: 10, spi: 10, agi: 10, rei: 10 },
     cur:   { hp: 2, sp: 10, ap: 3, san: 10 },
     talentRolled: false, talentTotal: 0, talentDice: [0, 0],
@@ -94,7 +96,9 @@ function calcTalent(c) {
     if (ab.type === 'mutant' && ab.second) cost += 150;
     return a + cost;
   }, 0);
-  return { stat, ab, total: stat + ab, rem: c.talentTotal - stat - ab };
+  const levelBonus = c.level || 0;
+  const total = c.talentTotal + levelBonus;
+  return { stat, ab, used: stat + ab, total, levelBonus, rem: total - stat - ab };
 }
 
 /* =============================================
@@ -254,9 +258,28 @@ function renderSheet() {
       </div>
     </div>
 
-    <!-- 才能ポイント -->
+    <!-- レベル & 才能ポイント -->
     <div class="section">
-      <div class="section-title">才能ポイント（2D100）</div>
+      <div class="section-title">レベル & 才能ポイント</div>
+
+      <!-- レベル -->
+      <div style="background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div>
+          <div class="t-label" style="margin-bottom:6px">現在レベル <span style="color:var(--ink-faint);font-size:9px">（0〜540）</span></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="sb" onclick="chgLevel(-1)">−</button>
+            <span style="font-family:var(--font-display);font-size:32px;font-weight:600;color:var(--ink);min-width:52px;text-align:center" id="lv_disp">${c.level}</span>
+            <button class="sb" onclick="chgLevel(1)">＋</button>
+          </div>
+        </div>
+        <div style="border-left:1px solid var(--border2);padding-left:20px;flex:1;min-width:160px">
+          <div class="t-label" style="margin-bottom:4px">レベルボーナス</div>
+          <div style="font-size:18px;font-weight:500;color:var(--accent)" id="lv_bonus">+${c.level}pt</div>
+          <div class="note" style="margin-top:4px">レベル1上昇ごとに才能ポイント+1</div>
+        </div>
+      </div>
+
+      <!-- 2D100ロール -->
       <div class="talent-box">
         <div style="text-align:center">
           ${diceHTML}
@@ -265,12 +288,16 @@ function renderSheet() {
           </button>
         </div>
         <div class="talent-info">
+          <div class="t-label">総才能ポイント</div>
+          <div style="font-size:13px;color:var(--ink-dim);margin-bottom:6px" id="t_breakdown">
+            ${c.talentRolled ? `2D100: ${c.talentTotal}pt ＋ Lv.ボーナス: ${tr.levelBonus}pt` : '—'}
+          </div>
           <div class="t-label">残りポイント</div>
           <div class="t-rem" id="t_rem" style="color:${rc}">
             ${c.talentRolled ? tr.rem : '—'}<span>pt</span>
           </div>
           ${c.talentRolled
-            ? `<div class="t-used" id="t_used">ステータス: ${tr.stat}pt / 異能: ${tr.ab}pt / 合計: ${c.talentTotal}pt</div>`
+            ? `<div class="t-used" id="t_used">ステータス: ${tr.stat}pt / 異能: ${tr.ab}pt / 合計消費: ${tr.used}pt / 総計: ${tr.total}pt</div>`
             : ''}
         </div>
       </div>
@@ -483,7 +510,19 @@ function doRoll() {
    ステータス操作
    ============================================= */
 
-function chgStat(k, delta) {
+function chgLevel(delta) {
+  const c = gc(activeId); if (!c) return;
+  c.level = Math.max(0, Math.min(540, (c.level || 0) + delta));
+  // レベル表示を更新
+  const disp  = document.getElementById('lv_disp');
+  const bonus = document.getElementById('lv_bonus');
+  if (disp)  disp.textContent  = c.level;
+  if (bonus) bonus.textContent = `+${c.level}pt`;
+  refreshDerived();
+  setSt('');
+}
+
+
   const c = gc(activeId); if (!c) return;
   if (delta > 0 && c.talentRolled) {
     const tr = calcTalent(c);
@@ -512,7 +551,9 @@ function refreshDerived() {
   const rem = document.getElementById('t_rem');
   if (rem && c.talentRolled) { rem.style.color = rc; rem.innerHTML = `${tr.rem}<span>pt</span>`; }
   const tu = document.getElementById('t_used');
-  if (tu && c.talentRolled) tu.textContent = `ステータス: ${tr.stat}pt / 異能: ${tr.ab}pt / 合計: ${c.talentTotal}pt`;
+  if (tu && c.talentRolled) tu.textContent = `ステータス: ${tr.stat}pt / 異能: ${tr.ab}pt / 合計消費: ${tr.used}pt / 総計: ${tr.total}pt`;
+  const tb = document.getElementById('t_breakdown');
+  if (tb && c.talentRolled) tb.textContent = `2D100: ${c.talentTotal}pt ＋ Lv.ボーナス: ${tr.levelBonus}pt`;
 
   // cur値がmaxを超えていたらクランプ
   ['hp', 'sp', 'ap', 'san'].forEach(r => {
