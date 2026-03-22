@@ -45,6 +45,8 @@ function migrateChar(c) {
   if (!c.conditions) c.conditions = ['normal'];
   if (!c.cur)        c.cur        = { hp: 2, sp: 10, ap: 3, san: 10 };
   if (c.level == null) c.level    = 0;
+  if (!c.images)       c.images   = [];
+  if (c.imageIndex == null) c.imageIndex = 0;
   return c;
 }
 
@@ -65,6 +67,7 @@ function makeChar() {
     skills:     [],
     conditions: ['normal'],
     insanityPattern: '', bg: '', notes: '',
+    images: [], imageIndex: 0,
     updatedAt: Date.now(),
   };
 }
@@ -258,6 +261,14 @@ function renderSheet() {
       </div>
     </div>
 
+    <!-- キャラクター画像 -->
+    <div class="section">
+      <div class="section-title">キャラクター画像</div>
+      <div id="img_section">
+        <div style="height:80px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:13px">読み込み中...</div>
+      </div>
+    </div>
+
     <!-- レベル & 才能ポイント -->
     <div class="section">
       <div class="section-title">レベル & 才能ポイント</div>
@@ -436,6 +447,9 @@ function renderSheet() {
     <button class="btn btn-acc" onclick="saveNow()">保存する</button>
     <div class="save-st" id="saveStatus"></div>
   </div>`;
+
+  // 画像セクションを非同期で描画（IndexedDB読み込み）
+  renderImageSection(c);
 }
 
 /* =============================================
@@ -808,3 +822,181 @@ function loadFile(e) {
 
 loadChars();
 renderList();
+
+/* =============================================
+   IndexedDB — 画像ストレージ
+   ============================================= */
+
+const DB_NAME    = 'schwarze_kiste_images';
+const DB_VERSION = 1;
+const DB_STORE   = 'images';
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (db) { resolve(db); return; }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(DB_STORE)) {
+        d.createObjectStore(DB_STORE, { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function dbPut(key, data) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put({ key, data });
+    tx.oncomplete = resolve;
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+
+async function dbGet(key) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = d.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).get(key);
+    req.onsuccess = e => resolve(e.target.result?.data || null);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function dbDelete(key) {
+  const d = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = d.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(key);
+    tx.oncomplete = resolve;
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+
+function imgKey(charId, imgId) { return charId + '::' + imgId; }
+
+/* =============================================
+   画像セクション レンダリング
+   ============================================= */
+
+async function renderImageSection(c) {
+  const section = document.getElementById('img_section');
+  if (!section) return;
+
+  const imgs = c.images || [];
+  const idx  = c.imageIndex != null ? c.imageIndex : 0;
+  const cur  = imgs[idx] || null;
+
+  let mainHTML = '';
+  if (cur) {
+    const blob = await dbGet(imgKey(c.id, cur.id));
+    if (blob) {
+      mainHTML = `
+        <div style="text-align:center;margin-bottom:14px">
+          <img src="${blob}" alt="${cur.label}" style="max-width:100%;max-height:360px;border-radius:4px;border:1px solid var(--border);object-fit:contain;background:var(--surface4)" />
+          <div style="margin-top:8px;font-size:12px;color:var(--ink-dim)">${cur.label || '（ラベルなし）'}</div>
+        </div>`;
+    }
+  } else {
+    mainHTML = `<div style="height:100px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:13px;border:1px dashed var(--border2);border-radius:4px;margin-bottom:14px">画像なし</div>`;
+  }
+
+  const navHTML = imgs.length > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px">
+      <button class="sb" onclick="imgNav(-1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>◀</button>
+      <span style="font-size:13px;color:var(--ink-dim)">${idx + 1} / ${imgs.length}</span>
+      <button class="sb" onclick="imgNav(1)" ${idx === imgs.length - 1 ? 'disabled style="opacity:0.3"' : ''}>▶</button>
+    </div>` : imgs.length === 1 ? `<div style="text-align:center;font-size:12px;color:var(--ink-faint);margin-bottom:10px">1 / 1</div>` : '';
+
+  let thumbsHTML = '';
+  if (imgs.length > 1) {
+    const thumbPromises = imgs.map(async (img, i) => {
+      const blob = await dbGet(imgKey(c.id, img.id));
+      if (!blob) return '';
+      const border = i === idx ? 'var(--accent)' : 'var(--border2)';
+      return `<div onclick="imgSelect(${i})" style="cursor:pointer;border:2px solid ${border};border-radius:4px;overflow:hidden;width:56px;height:56px;flex-shrink:0"><img src="${blob}" style="width:100%;height:100%;object-fit:cover"/></div>`;
+    });
+    const thumbs = await Promise.all(thumbPromises);
+    thumbsHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${thumbs.join('')}</div>`;
+  }
+
+  const labelField = cur ? `
+    <div class="field" style="flex:2;min-width:140px">
+      <input class="fi" style="font-size:12px" placeholder="差分名（通常・戦闘 など）" value="${cur.label || ''}" oninput="imgLabel(this.value)"/>
+    </div>
+    <button class="btn btn-sm btn-d" onclick="imgDelete()">削除</button>` : '';
+
+  section.innerHTML = `
+    ${mainHTML}
+    ${navHTML}
+    ${thumbsHTML}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label class="btn-ghost" style="margin-top:0;flex:1;text-align:center;cursor:pointer">
+        ＋ 画像を追加
+        <input type="file" accept="image/*" class="hidden" onchange="imgAdd(event)"/>
+      </label>
+      ${labelField}
+    </div>
+    <div class="note" style="margin-top:8px">画像はこのブラウザのみに保存されます。書き出しJSONには含まれません。</div>
+  `;
+}
+
+/* =============================================
+   画像操作
+   ============================================= */
+
+function imgNav(delta) {
+  const c = gc(activeId); if (!c) return;
+  const imgs = c.images || [];
+  c.imageIndex = Math.max(0, Math.min(imgs.length - 1, (c.imageIndex || 0) + delta));
+  renderImageSection(c);
+}
+
+function imgSelect(i) {
+  const c = gc(activeId); if (!c) return;
+  c.imageIndex = i;
+  renderImageSection(c);
+}
+
+function imgLabel(val) {
+  const c = gc(activeId); if (!c) return;
+  const imgs = c.images || [];
+  const idx  = c.imageIndex || 0;
+  if (imgs[idx]) { imgs[idx].label = val; setSt(''); }
+}
+
+async function imgAdd(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const c = gc(activeId); if (!c) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const blob  = ev.target.result;
+    const imgId = uid();
+    const label = file.name.replace(/\.[^.]+$/, '');
+    if (!c.images) c.images = [];
+    c.images.push({ id: imgId, label });
+    c.imageIndex = c.images.length - 1;
+    await dbPut(imgKey(c.id, imgId), blob);
+    setSt('');
+    renderImageSection(c);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+async function imgDelete() {
+  const c = gc(activeId); if (!c) return;
+  const imgs = c.images || [];
+  const idx  = c.imageIndex || 0;
+  const cur  = imgs[idx]; if (!cur) return;
+  await dbDelete(imgKey(c.id, cur.id));
+  c.images.splice(idx, 1);
+  c.imageIndex = Math.max(0, idx - 1);
+  setSt('');
+  renderImageSection(c);
+}
+
+openDB();
