@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>黒匣 / SCHWARZE KISTE</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Serif+JP:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="style.css" />
+<meta property="og:title" content="黒匣 / SCHWARZE KISTE" />
+<meta property="og:description" content="オリジナルTRPG キャラクター管理サイト" />
+<meta property="og:type" content="website" />
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      黒匣 &nbsp;/&nbsp; SCHWARZE KISTE
+    </div>
+    <div class="header-right">
+      <button class="btn btn-sm" onclick="importFile()">読み込み</button>
+      <button class="btn btn-sm" onclick="exportAll()">書き出し</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- サイドバー -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-label">キャラクター一覧</div>
+        <input class="search" id="searchInput" placeholder="名前で検索..." oninput="renderList()" />
+      </div>
+      <div class="char-list" id="charList"></div>
+      <div class="sidebar-foot">
+        <button class="btn btn-acc" style="width:100%" onclick="newChar()">＋ 新規作成</button>
+      </div>
+    </div>
+
+    <!-- サイドバーオーバーレイ（タブレット用） -->
+    <div class="sidebar-overlay hidden" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- メインコンテンツ -->
+    <div class="content" id="content">
+      <!-- タブレット用メニューボタン -->
+      <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-glyph">✦</div>
+        <div style="font-size:13px">キャラクターを選択するか、新規作成してください</div>
+      </div>
+      <div id="sheetArea" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="overlay hidden" id="delModal">
+  <div class="modal">
+    <div class="modal-title">キャラクターを削除</div>
+    <div class="modal-body" id="delModalBody"></div>
+    <div class="modal-act">
+      <button class="btn" onclick="closeDelModal()">キャンセル</button>
+      <button class="btn btn-d" onclick="confirmDel()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ファイル読み込み -->
+<input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadFile(event)" />
+
+<script src="script.js"></script>
+</body>
+</html>
