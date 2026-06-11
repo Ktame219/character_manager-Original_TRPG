@@ -1,75 +1,1227 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>黒匣 / SCHWARZE KISTE</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Serif+JP:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="icon" href="favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="style.css" />
-<meta property="og:title" content="黒匣 / SCHWARZE KISTE" />
-<meta property="og:description" content="オリジナルボードゲーム キャラクター管理サイト" />
-<meta property="og:type" content="website" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ネジクレネジマキ キャラ管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div class="app">
-  <div class="header">
-    <div class="logo">
-      <div class="logo-mark"></div>
-      黒匣 &nbsp;/&nbsp; SCHWARZE KISTE
-    </div>
-    <div class="header-right">
-      <button class="btn btn-sm" onclick="importFile()">読み込み</button>
-      <button class="btn btn-sm" onclick="exportAll()">書き出し</button>
+<style>
+:root{
+  --ac:#534AB7;--acd:#3C3489;--acl:#EEEDFE;--dng:#E24B4A;--dngb:#FCEBEB;
+  --font-sans:'Noto Sans JP',system-ui,-apple-system,sans-serif;
+  --color-text-primary:#1a1a1a;
+  --color-text-secondary:#6b7280;
+  --color-text-tertiary:#9ca3af;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f9fafb;
+  --color-border-secondary:#e5e7eb;
+  --color-border-tertiary:#f3f4f6;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --color-text-primary:#f9fafb;
+    --color-text-secondary:#9ca3af;
+    --color-text-tertiary:#6b7280;
+    --color-background-primary:#1f2937;
+    --color-background-secondary:#111827;
+    --color-border-secondary:#374151;
+    --color-border-tertiary:#2d3748;
+    --acl:#2d2a5e;
+  }
+}
+body{background:var(--color-background-secondary);min-height:100vh;}
+.page{max-width:720px;margin:0 auto;}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ac:#534AB7;--acd:#3C3489;--acl:#EEEDFE;--dng:#E24B4A;--dngb:#FCEBEB}
+.page{padding:0 0 2rem;font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;gap:10px;padding:1rem 0 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:1.5rem}
+.topbar h1{font-size:17px;font-weight:500;color:var(--color-text-primary);flex:1}
+.btn{cursor:pointer;font-family:var(--font-sans);font-size:13px;padding:6px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--color-background-secondary)}
+.btn.ac{background:var(--ac);color:#fff;border-color:var(--ac)}
+.btn.ac:hover{background:var(--acd)}
+.btn.dng{border-color:var(--dng);color:var(--dng)}
+.btn.dng:hover{background:var(--dngb)}
+.btn.sm{font-size:12px;padding:4px 10px}
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:1rem}
+.ccard{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;cursor:pointer}
+.ccard:hover{border-color:var(--color-border-secondary)}
+.ccard-img{width:100%;height:120px;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;color:var(--color-text-tertiary);font-size:30px;overflow:hidden}
+.ccard-img img{width:100%;height:100%;object-fit:cover}
+.ccard-body{padding:10px 12px}
+.ccard-name{font-size:15px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.ccard-sub{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+.ccard-ko{font-size:11px;color:var(--dng);font-weight:500;margin-top:3px}
+.new-ccard{border:0.5px dashed var(--color-border-tertiary);border-radius:var(--border-radius-lg);min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--color-text-secondary);font-size:13px}
+.new-ccard:hover{border-color:var(--color-border-secondary);background:var(--color-background-secondary)}
+.sheet{display:none}.sheet.on{display:block}
+.sec{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:10px;overflow:hidden}
+.sec-t{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px}.sec-header{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1.25rem;cursor:pointer;user-select:none}.sec-header:hover{background:var(--color-background-secondary)}.sec.no-collapse .sec-header{cursor:default}.sec.no-collapse .sec-header:hover{background:transparent}.sec-toggle{font-size:14px;color:var(--color-text-tertiary);transition:transform .2s}.sec-toggle.open{transform:rotate(180deg)}.sec-body{padding:0 1.25rem 1rem}.sec-body.collapsed{display:none}
+.row{display:grid;gap:8px;margin-bottom:8px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fl{font-size:11px;color:var(--color-text-secondary)}
+input[type=text],input[type=number],textarea{width:100%;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);font-size:13px;resize:none}
+input:focus,textarea:focus{outline:none;border-color:var(--ac)}
+.hex-row{display:flex;flex-wrap:wrap;gap:4px}
+.hb{width:30px;height:30px;border-radius:4px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);cursor:pointer;font-size:11px;font-weight:500;color:var(--color-text-secondary);display:flex;align-items:center;justify-content:center}
+.hb.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ko-wrap{display:flex;align-items:center;gap:8px;padding:6px 0}
+.ko-wrap input[type=checkbox]{width:16px;height:16px;accent-color:var(--dng);cursor:pointer}
+.ko-wrap label{font-size:13px;font-weight:500;cursor:pointer;color:var(--color-text-primary)}
+.ko-wrap.ko label{color:var(--dng)}
+.sk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sk-grid.c3{grid-template-columns:1fr 1fr 1fr}
+.sk-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;cursor:pointer;position:relative}
+.sk-card:hover{border-color:var(--color-border-secondary)}
+.sk-card.sel{border:2px solid var(--ac);background:var(--color-background-secondary)}
+.sk-card input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+.sk-chk{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:var(--ac);display:none;align-items:center;justify-content:center}
+.sk-card.sel .sk-chk{display:flex}
+.sk-name{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:5px}
+.sk-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+.tag.ac{background:var(--acl);color:var(--ac);border-color:#AFA9EC}
+.sk-card.sel .tag{background:var(--color-background-primary)}
+.sk-eff{font-size:11px;color:var(--color-text-secondary);line-height:1.6}
+.clan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.clan-opt input[type=radio]{display:none}
+.clan-opt label{display:block;text-align:center;padding:6px 4px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;color:var(--color-text-primary)}
+.clan-opt input:checked+label{background:var(--ac);color:#fff;border-color:var(--ac)}
+.clan-opt label:hover{background:var(--color-background-secondary)}
+.kiz-row{display:grid;grid-template-columns:1fr auto 46px 24px;gap:6px;align-items:center;margin-bottom:6px}
+.kiz-t input[type=radio]{display:none}
+.kiz-t{display:flex;gap:3px}
+.kiz-t input+label{font-size:11px;cursor:pointer;padding:2px 6px;border-radius:20px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+.kiz-t input:checked+label{background:var(--ac);color:#fff;border-color:var(--ac)}
+.kiz-t input.teki:checked+label{background:#D85A30;border-color:#D85A30}
+.del-btn{width:22px;height:22px;padding:0;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--color-text-tertiary);cursor:pointer;font-size:13px}
+.del-btn:hover{color:var(--dng)}
+.avatar-wrap{width:96px;height:124px;border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;flex-shrink:0;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.avatar-wrap img{width:100%;height:100%;object-fit:cover}
+.avatar-wrap .ov{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;color:#fff;font-size:22px}
+.avatar-wrap:hover .ov{opacity:1}
+.d66-box{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px}
+.d66-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.d66-panel{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);padding:10px 12px;margin-top:10px;display:none}
+.d66-panel.show{display:block}
+.d66-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.d66-label{font-size:11px;color:var(--color-text-secondary);min-width:56px}
+.d66-val{font-size:14px;font-weight:500;color:var(--color-text-primary);flex:1}
+.d66-apply{font-size:11px;padding:3px 8px;border-radius:20px;cursor:pointer;background:var(--acl);color:var(--ac);border:0.5px solid #AFA9EC;font-family:var(--font-sans)}
+.d66-apply:hover{background:#CECBF6}
+.rig-step{margin-bottom:10px}
+.rig-step-title{font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500}
+.word-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.wchip{padding:4px 10px;border-radius:20px;border:0.5px solid var(--color-border-tertiary);font-size:13px;cursor:pointer;color:var(--color-text-primary);background:var(--color-background-primary)}
+.wchip:hover{border-color:var(--color-border-secondary);background:var(--color-background-secondary)}
+.wchip.picked{background:var(--ac);color:#fff;border-color:var(--ac)}
+.rig-preview{font-size:15px;font-weight:500;color:var(--ac);margin:8px 0 4px;min-height:22px}
+.ok-badge{font-size:12px;color:#1D9E75;display:none;margin-top:4px}
+.ok-badge.show{display:block}
+
+/* ===== 閲覧モード ===== */
+#vv{display:none}
+#vv.on{display:block}
+
+/* ヘッダーヒーロー */
+.vw-hero{position:relative;background:var(--ac);border-radius:var(--border-radius-lg);overflow:hidden;margin-bottom:12px;padding:1.25rem 1.25rem 1rem}
+.vw-hero::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.35) 0%,transparent 60%);pointer-events:none}
+.vw-hero-inner{position:relative;display:flex;gap:14px;align-items:flex-end}
+.vw-avatar{width:88px;height:110px;border-radius:10px;overflow:hidden;flex-shrink:0;border:2px solid rgba(255,255,255,.35);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:32px}
+.vw-avatar img{width:100%;height:100%;object-fit:cover}
+.vw-hero-info{flex:1;min-width:0}
+.vw-name{font-size:22px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.vw-rig{font-size:13px;color:rgba(255,255,255,.8);margin-bottom:6px}
+.vw-badges{display:flex;flex-wrap:wrap;gap:5px}
+.vw-badge{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff;border:0.5px solid rgba(255,255,255,.3)}
+.vw-badge.dng{background:rgba(226,75,74,.7);border-color:rgba(226,75,74,.9)}
+.vw-ko-banner{background:var(--dng);color:#fff;font-size:12px;font-weight:700;text-align:center;padding:5px;letter-spacing:.05em;margin-bottom:10px;border-radius:var(--border-radius-md)}
+
+/* クロガネバー */
+.vw-kurogane{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:10px}
+.vw-kuro-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:7px;font-weight:500}
+.vw-kuro-pips{display:flex;gap:4px;flex-wrap:wrap}
+.vw-pip{width:28px;height:28px;border-radius:4px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--color-text-tertiary)}
+.vw-pip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+
+/* セクション共通 */
+.vw-sec{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:10px;overflow:hidden}
+.vw-sec-head{font-size:11px;font-weight:500;color:var(--color-text-secondary);padding:7px 14px 0;letter-spacing:.04em;text-transform:uppercase}
+.vw-sec-body{padding:8px 14px 12px}
+
+/* バックグラウンド3列 */
+.vw-bg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.vw-bg-item{}
+.vw-bg-key{font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px}
+.vw-bg-val{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.vw-bg-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.6;white-space:pre-wrap}
+
+/* スキルカード 閲覧用 */
+.vw-skill-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;background:var(--color-background-secondary)}
+.vw-skill-type{font-size:10px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.vw-skill-name{font-size:15px;font-weight:700;color:var(--color-text-primary);margin-bottom:6px}
+.vw-skill-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.vw-skill-eff{font-size:12px;color:var(--color-text-secondary);line-height:1.7}
+
+/* 因縁テーブル */
+.vw-kiz-table{width:100%;border-collapse:collapse}
+.vw-kiz-table th{font-size:10px;color:var(--color-text-tertiary);font-weight:500;padding:0 6px 6px;text-align:left}
+.vw-kiz-table td{font-size:13px;padding:5px 6px;border-top:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle}
+.vw-kiz-type{display:inline-block;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:500}
+.vw-kiz-type.kizuna{background:var(--acl);color:var(--ac);border:0.5px solid #AFA9EC}
+.vw-kiz-type.teki{background:#FDEAE5;color:#D85A30;border:0.5px solid #F4B49E}
+.vw-kiz-pts{font-size:13px;font-weight:500;color:var(--color-text-primary);text-align:right}
+
+/* メモ */
+.vw-memo{font-size:13px;color:var(--color-text-primary);line-height:1.8;white-space:pre-wrap}
+
+/* 基本情報グリッド */
+.vw-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.vw-info-item{}
+.vw-info-key{font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px}
+.vw-info-val{font-size:13px;color:var(--color-text-primary);font-weight:500}
+
+/* クラン情報 */
+.vw-clan-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vw-clan-chip{font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;background:var(--ac);color:#fff}
+.vw-clan-rank{font-size:12px;color:var(--color-text-secondary)}
+
+@media(prefers-color-scheme:dark){
+  .vw-kiz-type.kizuna{background:#2d2a5e}
+  .vw-kiz-type.teki{background:#3d1f15;color:#F4A07A;border-color:#7a3520}
+}
+
+/* ===== GitHub / Gist連携 ===== */
+.gh-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:12px;flex-wrap:wrap}
+.gh-bar-info{flex:1;min-width:0;font-size:12px;color:var(--color-text-secondary)}
+.gh-bar-info strong{color:var(--color-text-primary);font-size:13px}
+.gh-avatar{width:24px;height:24px;border-radius:50%;border:0.5px solid var(--color-border-secondary)}
+#gh-account:hover{opacity:.75}
+.gist-share-box{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;margin-top:10px}
+.gist-url-row{display:flex;gap:6px;align-items:center;margin-top:6px}
+.gist-url-row input{flex:1;font-size:11px;color:var(--color-text-secondary);background:var(--color-background-primary)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:13px;padding:8px 18px;border-radius:20px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.import-banner{background:var(--acl);border:0.5px solid #AFA9EC;border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:12px;display:none}
+.import-banner.show{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.import-banner-info{flex:1;font-size:13px;color:var(--ac)}
+.import-banner strong{font-weight:700}
+</style>
+
+<div class="page" id="app">
+<div id="lv">
+  <div class="topbar">
+    <h1><i class="ti ti-user" style="font-size:16px;color:var(--ac)" aria-hidden="true"></i> ネジクレネジマキ キャラ管理</h1>
+    <!-- 非ログイン時：ログインボタン -->
+    <button class="btn sm" id="gh-login-btn" onclick="ghLogin()" style="display:none">
+      <i class="ti ti-brand-github" aria-hidden="true"></i> ログイン
+    </button>
+    <!-- ログイン時：アカウント表示 -->
+    <div id="gh-account" style="display:none;align-items:center;gap:8px;cursor:pointer" onclick="ghLogout()">
+      <img id="gh-account-avatar" class="gh-avatar" style="width:28px;height:28px">
+      <span id="gh-account-name" style="font-size:13px;color:var(--color-text-primary);font-weight:500"></span>
+      <i class="ti ti-logout" style="font-size:14px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
     </div>
   </div>
 
-  <div class="main">
-    <!-- サイドバー -->
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-head">
-        <div class="sidebar-label">キャラクター一覧</div>
-        <input class="search" id="searchInput" placeholder="名前で検索..." oninput="renderList()" />
+  <!-- GitHubログイン促進バー（非ログイン時のみ） -->
+  <div class="gh-bar" id="gh-bar" style="display:none">
+    <div class="gh-bar-info">
+      <span>GitHubでログインするとキャラを友達と共有できます</span>
+    </div>
+  </div>
+
+  <!-- Gist共有URLからのインポートバナー -->
+  <div class="import-banner" id="import-banner">
+    <div class="import-banner-info" id="import-banner-info"></div>
+    <button class="btn sm ac" id="import-btn" onclick="importFromGist()"><i class="ti ti-download" aria-hidden="true"></i> 自分のリストに追加</button>
+    <button class="btn sm" onclick="dismissImport()">閉じる</button>
+  </div>
+
+  <div class="char-grid" id="clist"></div>
+</div>
+
+<div id="sv" class="sheet">
+  <div class="topbar">
+    <button class="btn" onclick="back()"><i class="ti ti-arrow-left" aria-hidden="true"></i> 一覧</button>
+    <h1 id="stitle">キャラクター</h1>
+    <button class="btn ac" onclick="savec()"><i class="ti ti-device-floppy" aria-hidden="true"></i> 保存</button>
+    <button class="btn dng" onclick="delc()"><i class="ti ti-trash" aria-hidden="true"></i></button>
+  </div>
+
+  <div class="d66-box">
+    <div class="d66-title"><i class="ti ti-dice" style="font-size:16px;color:var(--ac)" aria-hidden="true"></i> D66 ランダム生成</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm d66-btn" id="d66-btn-name" onclick="toggleD66('name',rollName)"><i class="ti ti-dice" aria-hidden="true"></i> 名前</button>
+      <button class="btn sm d66-btn" id="d66-btn-rig" onclick="toggleD66('rig',rollRig)"><i class="ti ti-dice" aria-hidden="true"></i> リグ名</button>
+      <button class="btn sm d66-btn" id="d66-btn-minou" onclick="toggleD66('bg',()=>rollBG('minou'),'minou')"><i class="ti ti-dice" aria-hidden="true"></i> ミノウエ</button>
+      <button class="btn sm d66-btn" id="d66-btn-kikkake" onclick="toggleD66('bg',()=>rollBG('kikkake'),'kikkake')"><i class="ti ti-dice" aria-hidden="true"></i> キッカケ</button>
+      <button class="btn sm d66-btn" id="d66-btn-negai" onclick="toggleD66('bg',()=>rollBG('negai'),'negai')"><i class="ti ti-dice" aria-hidden="true"></i> ネガイ</button>
+    </div>
+    <div id="d66-name" class="d66-panel"></div>
+    <div id="d66-rig" class="d66-panel"></div>
+    <div id="d66-bg" class="d66-panel"></div>
+  </div>
+
+  <div class="sec no-collapse">
+    <div class="sec-header"><span class="sec-t">基本情報</span></div>
+    <div class="sec-body">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px">
+      <div class="avatar-wrap" onclick="pickImg()">
+        <i class="ti ti-user" id="av-ic" style="font-size:32px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+        <img id="av-img" style="display:none">
+        <div class="ov"><i class="ti ti-camera" aria-hidden="true"></i></div>
       </div>
-      <div class="char-list" id="charList"></div>
-      <div class="sidebar-foot">
-        <button class="btn btn-acc" style="width:100%" onclick="newChar()">＋ 新規作成</button>
+      <input type="file" id="img-in" accept="image/*" style="display:none" onchange="onImg(event)">
+      <div style="flex:1;min-width:0">
+        <div class="row" style="margin-bottom:8px"><div class="fg"><span class="fl">PC名</span><input type="text" id="f-name"></div></div>
+        <div class="row c2"><div class="fg"><span class="fl">リグの名前</span><input type="text" id="f-rig"></div><div class="fg"><span class="fl">プレイヤー名</span><input type="text" id="f-player"></div></div>
+        <div class="row c3"><div class="fg"><span class="fl">性別</span><input type="text" id="f-gender"></div><div class="fg"><span class="fl">年齢</span><input type="number" id="f-age"></div><div class="fg"><span class="fl">決めセリフ</span><input type="text" id="f-line"></div></div>
       </div>
     </div>
+  </div>
 
-    <!-- サイドバーオーバーレイ（タブレット用） -->
-    <div class="sidebar-overlay hidden" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <div class="sec" id="sec-bg">
+    <div class="sec-header" onclick="toggleSec('sec-bg')">
+      <span class="sec-t">バックグラウンド</span>
+      <i class="ti ti-chevron-down sec-toggle open" id="sec-bg-icon"></i>
+    </div>
+    <div class="sec-body" id="sec-bg-body">
+    <div class="row">
+      <div class="fg"><span class="fl">ミノウエ</span><input type="text" id="f-minou"><textarea id="f-minou-desc" rows="2" style="margin-top:4px" placeholder="概要（任意）"></textarea></div>
+      <div class="fg"><span class="fl">キッカケ</span><input type="text" id="f-kikkake"><textarea id="f-kikkake-desc" rows="2" style="margin-top:4px" placeholder="概要（任意）"></textarea></div>
+      <div class="fg"><span class="fl">ネガイ</span><input type="text" id="f-negai"><textarea id="f-negai-desc" rows="2" style="margin-top:4px" placeholder="概要（任意）"></textarea></div>
+    </div>
+    </div>
+  </div>
 
-    <!-- メインコンテンツ -->
-    <div class="content" id="content">
-      <!-- タブレット用メニューボタン -->
-      <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+  <div class="sec" id="sec-clan">
+    <div class="sec-header" onclick="toggleSec('sec-clan')">
+      <span class="sec-t">所属クラン・階級・序列</span>
+      <i class="ti ti-chevron-down sec-toggle open" id="sec-clan-icon"></i>
+    </div>
+    <div class="sec-body" id="sec-clan-body">
+    <div class="clan-grid" id="clan-radio"></div>
+    <div id="rank-area" style="display:none">
+      <div class="sec-t" style="margin-bottom:8px">階級・クランスキル</div>
+      <div class="sk-grid c3" id="clan-skills"></div>
+    </div>
+    <div class="row c2" style="margin-top:8px;margin-bottom:0"><div class="fg"><span class="fl">序列</span><input type="text" id="f-order"></div></div>
+    </div>
+  </div>
 
-      <div class="welcome" id="welcomeScreen">
-        <div class="welcome-glyph">✦</div>
-        <div style="font-size:13px">キャラクターを選択するか、新規作成してください</div>
-      </div>
-      <div id="sheetArea" class="hidden"></div>
+  <div class="sec no-collapse">
+    <div class="sec-header"><span class="sec-t">クロガネ</span></div>
+    <div class="sec-body">
+      <div class="hex-row" id="kgrid"></div>
+    </div>
+  </div>
+
+  <div class="sec no-collapse">
+    <div class="sec-header"><span class="sec-t">戦闘状態</span></div>
+    <div class="sec-body">
+    <div class="ko-wrap" id="kowrap"><input type="checkbox" id="ko-cb" onchange="toggleKO()"><label for="ko-cb">戦闘不能</label></div>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-ss">
+    <div class="sec-header" onclick="toggleSec('sec-ss')">
+      <span class="sec-t">スタイルスキル</span>
+      <i class="ti ti-chevron-down sec-toggle open" id="sec-ss-icon"></i>
+    </div>
+    <div class="sec-body" id="sec-ss-body">
+      <div class="sk-grid" id="style-skills"></div>
+    </div>
+  </div>
+
+  <div class="sec no-collapse">
+    <div class="sec-header"><span class="sec-t">因縁</span></div>
+    <div class="sec-body">
+    <div style="display:grid;grid-template-columns:1fr auto 46px 24px;gap:6px;margin-bottom:6px">
+      <span class="fl">対象</span><span class="fl">種別</span><span class="fl">点数</span><span></span>
+    </div>
+    <div id="kiz-rows"></div>
+    <button class="btn sm" onclick="addKiz()" style="margin-top:4px"><i class="ti ti-plus" aria-hidden="true"></i> 追加</button>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-memo">
+    <div class="sec-header" onclick="toggleSec('sec-memo')">
+      <span class="sec-t">メモ</span>
+      <i class="ti ti-chevron-down sec-toggle open" id="sec-memo-icon"></i>
+    </div>
+    <div class="sec-body" id="sec-memo-body">
+      <textarea id="f-memo" rows="4"></textarea>
     </div>
   </div>
 </div>
-
-<!-- 削除確認モーダル -->
-<div class="overlay hidden" id="delModal">
-  <div class="modal">
-    <div class="modal-title">キャラクターを削除</div>
-    <div class="modal-body" id="delModalBody"></div>
-    <div class="modal-act">
-      <button class="btn" onclick="closeDelModal()">キャンセル</button>
-      <button class="btn btn-d" onclick="confirmDel()">削除する</button>
-    </div>
-  </div>
 </div>
 
-<!-- ファイル読み込み -->
-<input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadFile(event)" />
+<!-- ===== 閲覧モード ===== -->
+<div id="vv" class="sheet">
+  <div class="topbar">
+    <button class="btn" onclick="backFromView()"><i class="ti ti-arrow-left" aria-hidden="true"></i> 一覧</button>
+    <h1 id="vtitle">キャラクター</h1>
+    <button class="btn sm" id="vw-share-btn" onclick="shareToGist()" style="display:none"><i class="ti ti-share" aria-hidden="true"></i> 共有</button>
+    <button class="btn" onclick="openEdit()"><i class="ti ti-pencil" aria-hidden="true"></i> 編集</button>
+  </div>
 
-<script src="script.js"></script>
+  <!-- KOバナー -->
+  <div id="vw-ko-banner" class="vw-ko-banner" style="display:none">⚠ 戦闘不能</div>
+
+  <!-- ヒーローヘッダー -->
+  <div class="vw-hero">
+    <div class="vw-hero-inner">
+      <div class="vw-avatar" id="vw-avatar">
+        <i class="ti ti-user" id="vw-av-ic" aria-hidden="true"></i>
+        <img id="vw-av-img" style="display:none">
+      </div>
+      <div class="vw-hero-info">
+        <div class="vw-name" id="vw-name">—</div>
+        <div class="vw-rig" id="vw-rig"></div>
+        <div class="vw-badges" id="vw-badges"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- クロガネ -->
+  <div class="vw-kurogane">
+    <div class="vw-kuro-label">クロガネ</div>
+    <div class="vw-kuro-pips" id="vw-kuro-pips"></div>
+  </div>
+
+  <!-- 基本情報 -->
+  <div class="vw-sec">
+    <div class="vw-sec-head">基本情報</div>
+    <div class="vw-sec-body">
+      <div class="vw-info-grid" id="vw-info-grid"></div>
+    </div>
+  </div>
+
+  <!-- バックグラウンド -->
+  <div class="vw-sec" id="vw-sec-bg">
+    <div class="vw-sec-head">バックグラウンド</div>
+    <div class="vw-sec-body">
+      <div class="vw-bg-grid" id="vw-bg-grid"></div>
+    </div>
+  </div>
+
+  <!-- クラン・スキル -->
+  <div class="vw-sec" id="vw-sec-clan">
+    <div class="vw-sec-head">所属クラン・クランスキル</div>
+    <div class="vw-sec-body">
+      <div class="vw-clan-row" id="vw-clan-row" style="margin-bottom:10px"></div>
+      <div id="vw-clan-skill"></div>
+    </div>
+  </div>
+
+  <!-- スタイルスキル -->
+  <div class="vw-sec" id="vw-sec-ss">
+    <div class="vw-sec-head">スタイルスキル</div>
+    <div class="vw-sec-body" id="vw-ss-body"></div>
+  </div>
+
+  <!-- 因縁 -->
+  <div class="vw-sec" id="vw-sec-kiz">
+    <div class="vw-sec-head">因縁</div>
+    <div class="vw-sec-body">
+      <table class="vw-kiz-table">
+        <thead><tr><th>対象</th><th>種別</th><th style="text-align:right">点数</th></tr></thead>
+        <tbody id="vw-kiz-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- メモ -->
+  <div class="vw-sec" id="vw-sec-memo">
+    <div class="vw-sec-head">メモ</div>
+    <div class="vw-sec-body"><div class="vw-memo" id="vw-memo"></div></div>
+  </div>
+</div><!-- /#vv -->
+</div><!-- /#app -->
+<script>
+function toggleSec(id){const body=document.getElementById(id+'-body');const icon=document.getElementById(id+'-icon');if(!body)return;const isOpen=!body.classList.contains('collapsed');body.classList.toggle('collapsed',isOpen);if(icon)icon.classList.toggle('open',!isOpen);}
+
+const CLANS={
+  '第伍特課':[
+    {rank:'巡察官',order:1,name:'撤退支援',timing:'登場するシーン中',limit:'何回でも使用可能',effect:'お前は自身が登場するシーンでお前が獲得する【リワード】を任意に選択し、それを獲得しないことができる。お前が選択した【リワード】の分配の処理では、お前はそのシーンに登場していないものとして分配が行われる。'},
+    {rank:'執行官',order:2,name:'追跡捜査',timing:'プロッティング中',limit:'3回／ゲームプレイ',effect:'任意のプレイヤー1人を指定する。そのプレイヤーはお前にプロッティングで隠している自分のダイスの出目を確認させなければならない。'},
+    {rank:'特務官',order:3,name:'執行特権',timing:'登場するシーン中',limit:'何回でも使用可能',effect:'そのシーンが「対立シーン」である時、シーンの解決判定でお前が最も高い順位となったとしても、お前はそのシーンに登場する任意のキャラクター1人への【敵意】を「1点」獲得できる。'},
+  ],
+  'N.M.I':[
+    {rank:'廃墟士',order:1,name:'枯渇採掘',timing:'登場するシーン中',limit:'何回でも使用可能',effect:'お前がこのシーンの【リワード】の獲得の処理で【スクラップ】を「1点」以上獲得する時、さらに【スクラップ】を「1点」獲得する。'},
+    {rank:'主任',order:2,name:'販売網',timing:'【メンテナンス】の処理中',limit:'1回／シーン',effect:'お前は自身の獲得している、リグに配置していないパーツカード1枚を捨て、【スクラップ】を「3点」獲得する。'},
+    {rank:'技監',order:3,name:'成果主義',timing:'サイクル終了時',limit:'何回でも使用可能',effect:'お前が他のどのPCよりも多く【スクラップ】を獲得している時に使用できる。【N.M.Iからの絆】を「1点」獲得する。'},
+  ],
+  'ネームレス':[
+    {rank:'野良',order:1,name:'同胞意識',timing:'登場するシーン中',limit:'何回でも使用可能',effect:'そのシーンが「協力シーン」である時、【因縁】の獲得のタイミングでお前は通常の処理の代わりに、シーンに登場するお前以外の全てのPCへの【絆】を「1点」ずつ獲得する。'},
+    {rank:'歴戦',order:2,name:'処世術',timing:'登場するシーン中',limit:'何回でも使用可能',effect:'お前が「協力シーン」に登場している時、お前の獲得する【リワード】を、そのシーンの解決判定で代わりに最も順位が高かったPCと同じものに変更する。'},
+    {rank:'伝説',order:3,name:'秩序の象徴',timing:'登場するシーン中',limit:'1回／ゲームプレイ',effect:'そのシーンの「スタンスの宣言」で「対立」を宣言したプレイヤーが過半数に満たない時に使用できる。そのシーンを「協力シーン」にすることができる。'},
+  ],
+  '再興者同盟':[
+    {rank:'灰徒',order:1,name:'構造知識',timing:'プロッティング中',limit:'3回／ゲームプレイ',effect:'お前はプロッティングでダイスを2つ使用することができる。ダイスを公開する時、お前は2つのダイスを公開し、その中から任意の1つを選んで自分のダイスの出目とする。'},
+    {rank:'拾典',order:2,name:'連鎖反応',timing:'プロッティング中',limit:'1回／ゲームプレイ',effect:'【プロット値】が「1番」と「6番」以外の【区域】を選ぶ。その上に配置されているシーンカードを山札に戻し、山札からシーンカードを1枚引いて指定した【区域】に配置する。'},
+    {rank:'戯諜',order:3,name:'抜け道',timing:'プロッティング直後',limit:'1回／ゲームプレイ',effect:'お前がプロッティングで公開した出目が「1」か「6」でない時に使用できる。お前が公開した出目と同じ【プロット値】の【区域】のシーンカードを山札に戻し、山札から1枚引いてその【区域】に配置する。'},
+  ],
+  'ノアの落とし子':[
+    {rank:'斑友',order:1,name:'旅装束',timing:'常時',limit:'なし',effect:'お前はリグに配置していないパーツカードを無制限に所持しておくことができる。'},
+    {rank:'斑長',order:2,name:'魔改造',timing:'【メンテナンス】の処理中',limit:'1回／シーン',effect:'お前は自身の獲得している、リグに配置していないパーツカード1枚を捨て、パーツカードを1枚引く。'},
+    {rank:'首課格',order:3,name:'現地改修',timing:'登場するシーン中',limit:'1回／ゲームプレイ',effect:'お前はそのシーンの【リワード】の獲得の処理に加えて【メンテナンス】の処理を行うことができる。'},
+  ],
+  'コルネリア家':[
+    {rank:'裏仔',order:1,name:'路地裏の掟',timing:'《ネグラに戻る》のシーン中',limit:'何回でも使用可能',effect:'このシーンの【リワード】の獲得の処理では、お前は設備を2つ宣言し、その特殊効果の適用を受けることができる。'},
+    {rank:'契手',order:2,name:'鉄砲玉',timing:'《ネグラに戻る》のシーン中',limit:'1回／ゲームプレイ',effect:'シーンに登場するお前以外のPCは、【リワード】の処理として設備の特殊効果の適用を受けることができない。'},
+    {rank:'血盟',order:3,name:'不夜城',timing:'サイクル終了時',limit:'1回／ゲームプレイ',effect:'追加でサイクルの処理を行う。このサイクルでは【不夜城】を修得しているPC以外のプレイヤーはプロッティングを行えず、そうしたPC以外はシーンに参加することができない。'},
+  ],
+};
+const SS=[
+  {id:'daitan',name:'大胆不敵',timing:'ショウダウン中',limit:'1回／ゲームプレイ',effect:'【ガッツ】がゼロになった直後に使用できる。そのステップのアクションでお前が宣言したパーツを全て【破損】させて、お前の【ガッツ】を「1点」にする。'},
+  {id:'reisei',name:'冷静沈着',timing:'ショウダウン中',limit:'何回でも使用可能',effect:'お前がブレイクを宣言した次のランの開始時、お前は追加で【ガッツ】を「1点」獲得する。'},
+  {id:'rouren',name:'狡猾老獪',timing:'ショウダウン中',limit:'3回／ゲームプレイ',effect:'お前のいるエリアを任意のエリアに変更する。「離脱」から復帰して任意のエリアに自身のPCコマを移動させてもいい。'},
+  {id:'tensin',name:'天真爛漫',timing:'ショウダウン中',limit:'何回でも使用可能',effect:'お前がショウダウン中に行う応援では、チェックを入れる【絆】の点数にかかわらず任意の数だけ行為判定のダイスを振り直すことができる。'},
+  {id:'onkou',name:'温厚篤実',timing:'ショウダウン中',limit:'1回／ゲームプレイ',effect:'お前の獲得している、チェックの入っている【絆】1つのチェックを取り除く。'},
+  {id:'akugyaku',name:'悪逆非道',timing:'ショウダウン中',limit:'何回でも使用可能',effect:'お前は自身の持つ【絆】を【敵意】であるものとして扱うことができる。'},
+];
+const NAMES={
+  男子:{11:'イオリ',12:'ヒカル',13:'ユウセイ',14:'トーヤ',15:'コウ',16:'ソータ',22:'ハルト',23:'レツ',24:'シュージ',25:'コウガ',26:'シンヤ',33:'リョウ',34:'キリト',35:'ショーゴ',36:'ダイキ',44:'バン',45:'タイガ',46:'ユージン',55:'ジョージ',56:'カイ',66:'ジン'},
+  女子:{11:'カズサ',12:'メイ',13:'シオン',14:'ルリ',15:'アカネ',16:'アリサ',22:'ナオミ',23:'サツキ',24:'レイ',25:'チアキ',26:'チヒロ',33:'アスカ',34:'リナ',35:'ヒナタ',36:'ミサキ',44:'ムツミ',45:'マリカ',46:'アンナ',55:'ミノリ',56:'エマ',66:'ハルカ'},
+  お偉方:{11:'カブラギ',12:'スドウ',13:'ナオモト',14:'ヒカワ',15:'ナガセ',16:'スメラギ',22:'ヤガミ',23:'アカツキ',24:'サオトメ',25:'テンドウ',26:'キリュウ',33:'サカキ',34:'ナツメ',35:'イガラシ',36:'ヒジリ',44:'ヒイラギ',45:'タチバナ',46:'カガミ',55:'マキシマ',56:'ナギサ',66:'オニツカ'},
+  変わり種:{11:'パンチョー',12:'ショーネン',13:'カントク',14:'ホクロ',15:'ノッポ',16:'チビスケ',22:'サスライ',23:'ブライ',24:'ナナシノ',25:'フーテン',26:'シンイリ',33:'バイセン',34:'アニキ',35:'アネゴ',36:'アネサン',44:'メガネ',45:'オタクワン',46:'ダンナ',55:'ボーズ',56:'ヒメサマ',66:'ボス'},
+};
+const RW=[
+  {label:'単語1（色・天候）',t:{11:'レッド',12:'ブルー',13:'グリーン',14:'イエロー',15:'ホワイト',16:'ブラック',22:'ストーム',23:'フロスト',24:'スカイ',25:'スノウ',26:'テンペスト',33:'サベージ',34:'マッド',35:'ワイルド',36:'ブリティ',44:'グリム',45:'ラスト',46:'シャドウ',55:'フルムーン',56:'クレセント',66:'ノヴァ'}},
+  {label:'単語2（生き物・武器）',t:{11:'ビースト',12:'バンサー',13:'キャット',14:'ドッグ',15:'レイヴン',16:'ヴァイパー',22:'ブレイド',23:'エッジ',24:'バレット',25:'キャノン',26:'アームズ',33:'ローズ',34:'リリィ',35:'ブロッサム',36:'ドロップ',44:'ファントム',45:'ドラグーン',46:'コロッサス',55:'ギルティ',56:'バニッシュ',66:'ドレッドノート'}},
+  {label:'単語3（動き・職種）',t:{11:'ウォーカー',12:'ランナー',13:'ローバー',14:'ホッパー',15:'ウォッチャー',16:'クロウラー',22:'ジャンカー',23:'レッカー',24:'ドラッガー',25:'ドリフター',26:'ストライダー',33:'シューター',34:'ガンナー',35:'リーパー',36:'ブレイカー',44:'ストーカー',45:'ハンター',46:'スクレイパー',55:'グラインダー',56:'ドーザー',66:'アンサラー'}},
+  {label:'単語4（その他）',t:{11:'ノーツ',12:'チェレスト',13:'パラティーソ',14:'フローリア',15:'ヴィラン',16:'クエスト',22:'スチール',23:'アイアン',24:'ラスティ',25:'スチーム',26:'メタル',33:'レクイエム',34:'ゴスペル',35:'カノン',36:'アリア',44:'ノーチラス',45:'ジャッジメント',46:'テスタメント',55:'ミスティック',56:'(1D6-1)式',66:'ジ・'}},
+];
+const BGT={
+  minou:{11:'家族',12:'逃亡者',13:'クラン',14:'ジャンク漁り',15:'不良',16:'貧民',22:'高貴な生まれ',23:'覚えていない',24:'犯罪者',25:'かつての有名人',26:'放浪者',33:'集落',34:'荒事屋',35:'商人',36:'信者/神官',44:'メカニック',45:'孤独',46:'忌み子',55:'愛されるもの',56:'インテリ',66:'一般人'},
+  kikkake:{11:'誕生',12:'継承',13:'発見',14:'略奪',15:'偶然',16:'忘却',22:'鍵い',23:'購入',24:'報酬',25:'実験',26:'勧誘',33:'作製',34:'贈与',35:'共謀',36:'ネジクレ',44:'何でも屋',45:'竹馬の友',46:'遺物',55:'応用神',56:'クラン',66:'統制府の犬'},
+  negai:{11:'破壊',12:'対向心',13:'喪失',14:'創作者',15:'自由',16:'憧憬',22:'立身',23:'孤高',24:'諦念',25:'不可能',26:'征服',33:'財産',34:'蒐集',35:'復興',36:'治療',44:'旅',45:'力',46:'食材',55:'緑',56:'絆',66:'安全'},
+};
+
+function d6(){return Math.ceil(Math.random()*6);}
+function d66roll(){const a=d6(),b=d6();return{roll:a*10+b,a,b};}
+function lookup(tbl,roll){
+  if(tbl[roll])return tbl[roll];
+  const keys=Object.keys(tbl).map(Number).sort((a,b)=>a-b);
+  for(const k of keys)if(k>=roll)return tbl[k];
+  return tbl[keys[keys.length-1]];
+}
+
+let rigPicked=[];
+let rigRolled=[];
+
+let d66ActivePanel=null;
+let d66ActiveBgKey=null;
+
+function updateD66BtnStyles(activePanel,activeBgKey){
+  const btnMap={name:'d66-btn-name',rig:'d66-btn-rig',minou:'d66-btn-minou',kikkake:'d66-btn-kikkake',negai:'d66-btn-negai'};
+  Object.entries(btnMap).forEach(([k,id])=>{
+    const btn=document.getElementById(id);if(!btn)return;
+    let isActive=false;
+    if(k==='name'&&activePanel==='name')isActive=true;
+    else if(k==='rig'&&activePanel==='rig')isActive=true;
+    else if((k==='minou'||k==='kikkake'||k==='negai')&&activePanel==='bg'&&activeBgKey===k)isActive=true;
+    btn.classList.toggle('ac',isActive);
+  });
+}
+
+function toggleD66(panelKey,rollFn,bgKey){
+  const isSame=d66ActivePanel===panelKey&&(panelKey!=='bg'||d66ActiveBgKey===bgKey);
+  ['d66-name','d66-rig','d66-bg'].forEach(i=>document.getElementById(i).className='d66-panel');
+  if(isSame){
+    d66ActivePanel=null;d66ActiveBgKey=null;
+    updateD66BtnStyles(null,null);
+    return;
+  }
+  d66ActivePanel=panelKey;d66ActiveBgKey=bgKey||null;
+  updateD66BtnStyles(panelKey,bgKey);
+  rollFn();
+}
+
+function rollName(){
+  const r=d66roll();
+  const el=document.getElementById('d66-name');
+  el.className='d66-panel show';
+  let h=`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">🎲 ${r.a} と ${r.b} → ${r.roll}</div>`;
+  ['男子','女子','お偉方','変わり種'].forEach(cat=>{
+    const v=lookup(NAMES[cat],r.roll);
+    h+=`<div class="d66-row"><span class="d66-label">${cat}</span><span class="d66-val">${v}</span><button class="d66-apply" onclick="applyF('f-name','${v}','d66-name')">使う</button></div>`;
+  });
+  el.innerHTML=h;
+}
+
+function rollRig(){
+  const el=document.getElementById('d66-rig');
+  el.className='d66-panel show';
+  rigPicked=[];
+  rigRolled=RW.map(cat=>{const r=d66roll();return{r,v:lookup(cat.t,r.roll)};});
+  renderRigPanel();
+}
+
+function renderRigPanel(){
+  const el=document.getElementById('d66-rig');
+  let h='<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:10px">各カテゴリからD66で結果を確認し、好きな2つを選んで組み合わせてください</div>';
+  RW.forEach((cat,ci)=>{
+    const {r,v}=rigRolled[ci];
+    const isPicked=rigPicked.includes(ci);
+    const isDisabled=!isPicked&&rigPicked.length>=2;
+    h+=`<div class="rig-step">
+      <div class="rig-step-title">${cat.label}　<span style="font-size:10px;color:var(--color-text-tertiary)">🎲 ${r.a}と${r.b}→${r.roll}</span></div>
+      <div class="word-chips">
+        <span class="wchip${isPicked?' picked':''}${isDisabled?' disabled':''}" data-ci="${ci}" onclick="toggleRigWord(${ci})">${v}</span>
+      </div>
+    </div>`;
+  });
+  const combo=rigPicked.map(ci=>rigRolled[ci]?.v||'').join('');
+  h+=`<div class="rig-preview" id="rig-prev">${combo||'単語を2つ選んでください'}</div>`;
+  if(combo){
+    h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+      <button class="d66-apply" onclick="applyF('f-rig','${combo}','d66-rig')">「${combo}」を使う</button>
+      <button class="btn sm" onclick="rollRigDirect()"><i class="ti ti-refresh" aria-hidden="true"></i> 振り直す</button>
+    </div>`;
+  } else {
+    h+=`<button class="btn sm" onclick="rollRigDirect()" style="margin-top:4px"><i class="ti ti-refresh" aria-hidden="true"></i> 振り直す</button>`;
+  }
+  el.innerHTML=h;
+}
+
+function rollRigDirect(){
+  rigPicked=[];
+  rigRolled=RW.map(cat=>{const r=d66roll();return{r,v:lookup(cat.t,r.roll)};});
+  renderRigPanel();
+}
+
+function toggleRigWord(ci){
+  const idx=rigPicked.indexOf(ci);
+  if(idx>=0){rigPicked.splice(idx,1);}
+  else if(rigPicked.length<2){rigPicked.push(ci);}
+  else return;
+  renderRigPanel();
+}
+
+function rollBG(key){
+  const r=d66roll();
+  const el=document.getElementById('d66-bg');
+  el.className='d66-panel show';
+  const v=lookup(BGT[key],r.roll);
+  const label={minou:'ミノウエ',kikkake:'キッカケ',negai:'ネガイ'}[key];
+  el.innerHTML=`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">🎲 ${r.a} と ${r.b} → ${r.roll}</div>
+    <div class="d66-row"><span class="d66-label">${label}</span><span class="d66-val">${v}</span><button class="d66-apply" onclick="applyF('f-${key}','${v}','d66-bg')">使う</button></div>`;
+}
+
+function applyF(id,val,panelId){
+  document.getElementById(id).value=val;
+  if(cid&&chars[cid]){
+    const map={'f-name':'name','f-rig':'rig','f-minou':'minou','f-kikkake':'kikkake','f-negai':'negai'};
+    if(map[id])chars[cid][map[id]]=val;
+  }
+  document.getElementById(panelId).className='d66-panel';
+  d66ActivePanel=null;d66ActiveBgKey=null;
+  updateD66BtnStyles(null,null);
+}
+
+const KEY='nj_v7';
+let chars={},cid=null;
+async function load(){try{const raw=localStorage.getItem(KEY);if(raw)chars=JSON.parse(raw);}catch(e){}try{const r=await window.storage?.get(KEY);if(r&&r.value)chars=JSON.parse(r.value);}catch(e2){}renderList();}
+async function store(){try{localStorage.setItem(KEY,JSON.stringify(chars));}catch(e){}try{await window.storage?.set(KEY,JSON.stringify(chars));}catch(e){}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function ec(){return{name:'',rig:'',player:'',gender:'',age:'',line:'',minou:'',minouDesc:'',kikkake:'',kikkakeDesc:'',negai:'',negaiDesc:'',clan:'',rank:'',order:'',kurogane:new Array(10).fill(false),ko:false,ssId:'',kizuna:[{target:'',type:'絆',points:''}],memo:'',img:''};}
+
+function renderList(){
+  const el=document.getElementById('clist');el.innerHTML='';
+  Object.keys(chars).forEach(id=>{
+    const c=chars[id];
+    const cs=c.clan&&c.rank?CLANS[c.clan]?.find(s=>s.rank===c.rank):null;
+    const ss=SS.find(s=>s.id===c.ssId);
+    const card=document.createElement('div');card.className='ccard';
+    const imgW=document.createElement('div');imgW.className='ccard-img';
+    if(c.img){const im=document.createElement('img');im.src=c.img;imgW.appendChild(im);}
+    else imgW.innerHTML='<i class="ti ti-user" aria-hidden="true"></i>';
+    const body=document.createElement('div');body.className='ccard-body';
+    body.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">
+        <div class="ccard-name">${c.name||'名無し'}</div>
+        <button class="btn sm" style="flex-shrink:0;padding:2px 7px;font-size:11px" onclick="event.stopPropagation();open_('${id}')"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+      </div>
+      <div class="ccard-sub">${c.clan||'クラン未設定'}${c.rank?' · '+c.rank:''}</div>
+      <div class="ccard-sub">${cs?cs.name:'-'}${ss?' / '+ss.name:''}</div>
+      <div class="ccard-sub">クロガネ ${c.kurogane.filter(Boolean).length}/10</div>
+      ${c.ko?'<div class="ccard-ko">⚠ 戦闘不能</div>':''}`;
+    card.appendChild(imgW);card.appendChild(body);
+    card.onclick=()=>openView(id);el.appendChild(card);
+  });
+  const nc=document.createElement('div');nc.className='new-ccard';
+  nc.innerHTML='<i class="ti ti-plus" style="font-size:24px" aria-hidden="true"></i><span>新規作成</span>';
+  nc.onclick=newChar;el.appendChild(nc);
+}
+
+function newChar(){const id=uid();chars[id]=ec();open_(id);}
+function open_(id){
+  cid=id;const c=chars[id];
+  document.getElementById('lv').style.display='none';
+  document.getElementById('sv').classList.add('on');
+  document.getElementById('stitle').textContent=c.name||'キャラクター';
+  ['d66-name','d66-rig','d66-bg'].forEach(i=>document.getElementById(i).className='d66-panel');
+  d66ActivePanel=null;d66ActiveBgKey=null;
+  updateD66BtnStyles(null,null);
+  rigPicked=[];
+  fill(c);
+}
+function back(){document.getElementById('lv').style.display='';document.getElementById('sv').classList.remove('on');cid=null;}
+
+function fill(c){
+  const fv=(id,v)=>{document.getElementById(id).value=v||'';};
+  fv('f-name',c.name);fv('f-rig',c.rig);fv('f-player',c.player);
+  fv('f-gender',c.gender);fv('f-age',c.age);fv('f-line',c.line);
+  fv('f-minou',c.minou);fv('f-minou-desc',c.minouDesc);
+  fv('f-kikkake',c.kikkake);fv('f-kikkake-desc',c.kikkakeDesc);
+  fv('f-negai',c.negai);fv('f-negai-desc',c.negaiDesc);
+  fv('f-order',c.order);fv('f-memo',c.memo);
+  document.getElementById('ko-cb').checked=c.ko||false;
+  document.getElementById('kowrap').className='ko-wrap'+(c.ko?' ko':'');
+  const ai=document.getElementById('av-img'),ic=document.getElementById('av-ic');
+  if(c.img){ai.src=c.img;ai.style.display='block';ic.style.display='none';}
+  else{ai.style.display='none';ic.style.display='';}
+  renderHex('kgrid',c.kurogane);
+  renderClanRadio(c.clan);
+  if(c.clan)renderClanSkills(c.clan,c.rank);
+  renderSS(c.ssId);
+  renderKiz(c.kizuna);
+}
+
+function renderHex(el,arr){
+  const e=document.getElementById(el);e.innerHTML='';
+  arr.forEach((v,i)=>{const b=document.createElement('button');b.className='hb'+(v?' on':'');b.textContent=i+1;b.onclick=()=>{arr[i]=!arr[i];renderHex(el,arr);};e.appendChild(b);});
+}
+function renderClanRadio(sel){
+  const el=document.getElementById('clan-radio');el.innerHTML='';
+  Object.keys(CLANS).forEach(cn=>{
+    const w=document.createElement('div');w.className='clan-opt';
+    const rid='cr_'+cn;
+    w.innerHTML=`<input type="radio" name="cs" id="${rid}" value="${cn}" ${sel===cn?'checked':''}><label for="${rid}">${cn}</label>`;
+    w.querySelector('input').onchange=()=>{chars[cid].clan=cn;chars[cid].rank='';renderClanSkills(cn,'');};
+    el.appendChild(w);
+  });
+}
+function renderClanSkills(clan,selRank){
+  const area=document.getElementById('rank-area'),el=document.getElementById('clan-skills');
+  if(!clan||!CLANS[clan]){area.style.display='none';return;}
+  area.style.display='block';el.innerHTML='';
+  CLANS[clan].forEach(s=>{
+    const card=document.createElement('label');card.className='sk-card'+(selRank===s.rank?' sel':'');
+    card.innerHTML=`<input type="radio" name="cr" value="${s.rank}" ${selRank===s.rank?'checked':''}>
+      <div class="sk-chk"><i class="ti ti-check" style="font-size:10px;color:#fff" aria-hidden="true"></i></div>
+      <div class="sk-tags"><span class="tag ac">序列${s.order} · ${s.rank}</span></div>
+      <div class="sk-name">${s.name}</div>
+      <div class="sk-tags"><span class="tag">⏱ ${s.timing}</span><span class="tag ac">${s.limit}</span></div>
+      <div class="sk-eff">${s.effect}</div>`;
+    card.querySelector('input').onchange=()=>{chars[cid].rank=s.rank;renderClanSkills(clan,s.rank);};
+    el.appendChild(card);
+  });
+}
+function renderSS(selId){
+  const el=document.getElementById('style-skills');el.innerHTML='';
+  SS.forEach(s=>{
+    const card=document.createElement('label');card.className='sk-card'+(selId===s.id?' sel':'');
+    card.innerHTML=`<input type="radio" name="ss" value="${s.id}" ${selId===s.id?'checked':''}>
+      <div class="sk-chk"><i class="ti ti-check" style="font-size:10px;color:#fff" aria-hidden="true"></i></div>
+      <div class="sk-name">${s.name}</div>
+      <div class="sk-tags"><span class="tag">⏱ ${s.timing}</span><span class="tag ac">${s.limit}</span></div>
+      <div class="sk-eff">${s.effect}</div>`;
+    card.querySelector('input').onchange=()=>{chars[cid].ssId=s.id;renderSS(s.id);};
+    el.appendChild(card);
+  });
+}
+function toggleKO(){const c=chars[cid];c.ko=document.getElementById('ko-cb').checked;document.getElementById('kowrap').className='ko-wrap'+(c.ko?' ko':'');}
+function renderKiz(arr){
+  const el=document.getElementById('kiz-rows');el.innerHTML='';
+  arr.forEach((k,i)=>{
+    const row=document.createElement('div');row.className='kiz-row';
+    const rn='kz'+i+'_'+Date.now();
+    row.innerHTML=`<input type="text" value="${k.target||''}" onchange="chars[cid].kizuna[${i}].target=this.value">
+      <div class="kiz-t">
+        <input type="radio" name="${rn}" id="${rn}k" ${k.type==='絆'?'checked':''} onchange="chars[cid].kizuna[${i}].type='絆'"><label for="${rn}k">絆</label>
+        <input type="radio" name="${rn}" id="${rn}t" class="teki" ${k.type==='敵意'?'checked':''} onchange="chars[cid].kizuna[${i}].type='敵意'"><label for="${rn}t">敵意</label>
+      </div>
+      <input type="number" value="${k.points||''}" onchange="chars[cid].kizuna[${i}].points=this.value" style="width:46px">
+      <button class="del-btn" onclick="delKiz(${i})"><i class="ti ti-x" aria-hidden="true"></i></button>`;
+    el.appendChild(row);
+  });
+}
+function addKiz(){chars[cid].kizuna.push({target:'',type:'絆',points:''});renderKiz(chars[cid].kizuna);}
+function delKiz(i){chars[cid].kizuna.splice(i,1);renderKiz(chars[cid].kizuna);}
+function pickImg(){document.getElementById('img-in').click();}
+function onImg(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    chars[cid].img=ev.target.result;
+    const ai=document.getElementById('av-img'),ic=document.getElementById('av-ic');
+    ai.src=ev.target.result;ai.style.display='block';ic.style.display='none';
+  };
+  reader.readAsDataURL(f);
+}
+function collect(){
+  const c=chars[cid];
+  ['name','rig','player','gender','age','line','minou','kikkake','negai','order','memo'].forEach(k=>{c[k]=document.getElementById('f-'+k).value;});
+  c.minouDesc=document.getElementById('f-minou-desc').value;
+  c.kikkakeDesc=document.getElementById('f-kikkake-desc').value;
+  c.negaiDesc=document.getElementById('f-negai-desc').value;
+}
+async function savec(){
+  collect();await store();
+  renderList();
+  // 閲覧モードから来た場合は閲覧モードへ戻す、そうでなければタイトル更新のみ
+  document.getElementById('stitle').textContent=chars[cid].name||'キャラクター';
+  const btn=document.querySelector('#sv .ac');const o=btn.innerHTML;
+  btn.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> 保存済み';
+  setTimeout(()=>{
+    btn.innerHTML=o;
+    // 保存後に閲覧モードへ遷移
+    const id=cid;
+    document.getElementById('sv').classList.remove('on');
+    cid=id;
+    document.getElementById('vv').classList.add('on');
+    document.getElementById('vtitle').textContent=chars[id].name||'キャラクター';
+    fillView(chars[id]);
+  },900);
+}
+async function delc(){
+  if(!confirm('このキャラクターを削除しますか？'))return;
+  delete chars[cid];await store();back();renderList();
+}
+load();
+
+/* ===== 閲覧モード ===== */
+function openView(id){
+  cid=id;
+  const c=chars[id];
+  document.getElementById('lv').style.display='none';
+  document.getElementById('vv').classList.add('on');
+  document.getElementById('vtitle').textContent=c.name||'キャラクター';
+  fillView(c);
+}
+
+function backFromView(){
+  document.getElementById('lv').style.display='';
+  document.getElementById('vv').classList.remove('on');
+  cid=null;
+}
+
+function openEdit(){
+  document.getElementById('vv').classList.remove('on');
+  open_(cid);
+}
+
+function fillView(c){
+  // KOバナー
+  const kob=document.getElementById('vw-ko-banner');
+  kob.style.display=c.ko?'':'none';
+
+  // アバター
+  const ai=document.getElementById('vw-av-img'),ic=document.getElementById('vw-av-ic');
+  if(c.img){ai.src=c.img;ai.style.display='block';ic.style.display='none';}
+  else{ai.style.display='none';ic.style.display='';}
+
+  // 名前・リグ
+  document.getElementById('vw-name').textContent=c.name||'名無し';
+  const rigEl=document.getElementById('vw-rig');
+  rigEl.textContent=c.rig?'リグ：'+c.rig:'';
+
+  // バッジ（性別・年齢・クラン・序列）
+  const badges=document.getElementById('vw-badges');
+  badges.innerHTML='';
+  const addBadge=(t,dng=false)=>{const s=document.createElement('span');s.className='vw-badge'+(dng?' dng':'');s.textContent=t;badges.appendChild(s);};
+  if(c.gender)addBadge(c.gender);
+  if(c.age)addBadge(c.age+'歳');
+  if(c.clan)addBadge(c.clan);
+  if(c.rank)addBadge(c.rank);
+  if(c.order)addBadge('序列 '+c.order);
+  if(c.ko)addBadge('⚠ 戦闘不能',true);
+
+  // クロガネ
+  const pips=document.getElementById('vw-kuro-pips');
+  pips.innerHTML='';
+  (c.kurogane||[]).forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='vw-pip'+(v?' on':'');
+    d.textContent=i+1;
+    pips.appendChild(d);
+  });
+
+  // 基本情報グリッド
+  const ig=document.getElementById('vw-info-grid');
+  ig.innerHTML='';
+  const infoItems=[
+    ['性別',c.gender],['年齢',c.age?c.age+'歳':''],['プレイヤー',c.player],
+  ].filter(([,v])=>v);
+  // 決めセリフは幅広く別行で
+  if(c.line){
+    ig.style.gridTemplateColumns='1fr 1fr 1fr';
+    infoItems.forEach(([k,v])=>{
+      ig.innerHTML+=`<div class="vw-info-item"><div class="vw-info-key">${k}</div><div class="vw-info-val">${v}</div></div>`;
+    });
+    const lineDiv=document.createElement('div');
+    lineDiv.style.cssText='grid-column:1/-1;border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;margin-top:4px';
+    lineDiv.innerHTML=`<div class="vw-info-key">決めセリフ</div><div style="font-size:14px;font-weight:500;color:var(--ac);margin-top:2px">${esc(c.line)}</div>`;
+    ig.appendChild(lineDiv);
+  } else {
+    infoItems.forEach(([k,v])=>{
+      ig.innerHTML+=`<div class="vw-info-item"><div class="vw-info-key">${k}</div><div class="vw-info-val">${esc(v)}</div></div>`;
+    });
+  }
+  if(!infoItems.length&&!c.line){ig.innerHTML='<span style="font-size:12px;color:var(--color-text-tertiary)">未入力</span>';}
+
+  // バックグラウンド
+  const bg=document.getElementById('vw-bg-grid');
+  bg.innerHTML='';
+  const bgSec=document.getElementById('vw-sec-bg');
+  const bgItems=[
+    ['ミノウエ',c.minou,c.minouDesc],
+    ['キッカケ',c.kikkake,c.kikkakeDesc],
+    ['ネガイ',c.negai,c.negaiDesc],
+  ];
+  const hasBG=bgItems.some(([,v,d])=>v||d);
+  bgSec.style.display=hasBG?'':'none';
+  bgItems.forEach(([k,v,d])=>{
+    bg.innerHTML+=`<div class="vw-bg-item">
+      <div class="vw-bg-key">${k}</div>
+      <div class="vw-bg-val">${esc(v)||'—'}</div>
+      ${d?`<div class="vw-bg-desc">${esc(d)}</div>`:''}
+    </div>`;
+  });
+
+  // クランスキル
+  const clanSec=document.getElementById('vw-sec-clan');
+  const clanRow=document.getElementById('vw-clan-row');
+  const clanSkillEl=document.getElementById('vw-clan-skill');
+  clanRow.innerHTML='';
+  clanSkillEl.innerHTML='';
+  if(c.clan){
+    clanSec.style.display='';
+    clanRow.innerHTML=`<span class="vw-clan-chip">${esc(c.clan)}</span>`;
+    if(c.rank)clanRow.innerHTML+=`<span class="vw-clan-rank">${esc(c.rank)}</span>`;
+    if(c.order)clanRow.innerHTML+=`<span class="vw-clan-rank">序列 ${esc(c.order)}</span>`;
+    const clanData=CLANS[c.clan];
+    if(clanData&&c.rank){
+      const sk=clanData.find(s=>s.rank===c.rank);
+      if(sk){
+        clanSkillEl.innerHTML=`<div class="vw-skill-card">
+          <div class="vw-skill-type">クランスキル</div>
+          <div class="vw-skill-name">${esc(sk.name)}</div>
+          <div class="vw-skill-tags">
+            <span class="tag">⏱ ${esc(sk.timing)}</span>
+            <span class="tag ac">${esc(sk.limit)}</span>
+          </div>
+          <div class="vw-skill-eff">${esc(sk.effect)}</div>
+        </div>`;
+      }
+    }
+  } else {
+    clanSec.style.display='none';
+  }
+
+  // スタイルスキル
+  const ssSec=document.getElementById('vw-sec-ss');
+  const ssBody=document.getElementById('vw-ss-body');
+  ssBody.innerHTML='';
+  if(c.ssId){
+    const sk=SS.find(s=>s.id===c.ssId);
+    if(sk){
+      ssSec.style.display='';
+      ssBody.innerHTML=`<div class="vw-skill-card">
+        <div class="vw-skill-type">スタイルスキル</div>
+        <div class="vw-skill-name">${esc(sk.name)}</div>
+        <div class="vw-skill-tags">
+          <span class="tag">⏱ ${esc(sk.timing)}</span>
+          <span class="tag ac">${esc(sk.limit)}</span>
+        </div>
+        <div class="vw-skill-eff">${esc(sk.effect)}</div>
+      </div>`;
+    }
+  } else {
+    ssSec.style.display='none';
+  }
+
+  // 因縁
+  const kizSec=document.getElementById('vw-sec-kiz');
+  const kizBody=document.getElementById('vw-kiz-body');
+  kizBody.innerHTML='';
+  const kizList=(c.kizuna||[]).filter(k=>k.target||k.points);
+  kizSec.style.display=kizList.length?'':'none';
+  kizList.forEach(k=>{
+    const typeClass=k.type==='絆'?'kizuna':'teki';
+    kizBody.innerHTML+=`<tr>
+      <td>${esc(k.target||'')}</td>
+      <td><span class="vw-kiz-type ${typeClass}">${esc(k.type||'絆')}</span></td>
+      <td class="vw-kiz-pts">${k.points||'—'}</td>
+    </tr>`;
+  });
+
+  // メモ
+  const memoSec=document.getElementById('vw-sec-memo');
+  const memoEl=document.getElementById('vw-memo');
+  memoSec.style.display=c.memo?'':'none';
+  memoEl.textContent=c.memo||'';
+}
+
+function esc(s){
+  if(!s&&s!==0)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ===== GitHub OAuth / Gist連携 ===== */
+const GH_CLIENT_ID='Ov23lisEudc0abg7t2ik';
+const GH_SCOPE='gist';
+const GH_REDIRECT=location.origin+'/callback';
+
+let ghToken=localStorage.getItem('gh_token')||null;
+let ghUser=null;
+let pendingGistId=null; // URLから読み込んだGist ID
+
+// トースト通知
+function toast(msg,ms=2200){
+  let el=document.getElementById('_toast');
+  if(!el){el=document.createElement('div');el.id='_toast';el.className='toast';document.body.appendChild(el);}
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),ms);
+}
+
+// GitHubログイン開始
+function ghLogin(){
+  const state=Math.random().toString(36).slice(2);
+  sessionStorage.setItem('gh_state',state);
+  location.href=`https://github.com/login/oauth/authorize?client_id=${GH_CLIENT_ID}&scope=${GH_SCOPE}&state=${state}&redirect_uri=${encodeURIComponent(GH_REDIRECT)}`;
+}
+
+// GitHubログアウト
+function ghLogout(){
+  if(!confirm(ghUser?.login+' からログアウトしますか？'))return;
+  ghToken=null;ghUser=null;
+  localStorage.removeItem('gh_token');
+  renderGhBar();
+  toast('ログアウトしました');
+}
+
+// コールバック処理（?code=...が付いているとき）
+async function handleOAuthCallback(){
+  const params=new URLSearchParams(location.search);
+  const code=params.get('code');
+  const state=params.get('state');
+  if(!code)return false;
+  // stateチェック
+  if(state&&state!==sessionStorage.getItem('gh_state')){
+    toast('認証エラー（state不一致）');
+    history.replaceState({},'',location.pathname);
+    return true;
+  }
+  sessionStorage.removeItem('gh_state');
+  toast('ログイン中…',4000);
+  try{
+    const res=await fetch('https://nejikure-token.kaitototamenobu.workers.dev',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code}),
+    });
+    const data=await res.json();
+    if(data.access_token){
+      ghToken=data.access_token;
+      localStorage.setItem('gh_token',ghToken);
+      toast('ログインしました！');
+    } else {
+      toast('ログインに失敗しました');
+    }
+  } catch(e){
+    toast('通信エラー: '+e.message);
+  }
+  history.replaceState({},'',location.pathname+(pendingGistId?'?gist='+pendingGistId:''));
+  return true;
+}
+
+// GitHubユーザー情報を取得
+async function fetchGhUser(){
+  if(!ghToken)return null;
+  try{
+    const res=await fetch('https://api.github.com/user',{headers:{Authorization:'token '+ghToken}});
+    if(res.status===401){ghToken=null;localStorage.removeItem('gh_token');return null;}
+    return await res.json();
+  } catch{return null;}
+}
+
+// ログインバーの描画
+function renderGhBar(){
+  const loginBtn=document.getElementById('gh-login-btn');
+  const accountEl=document.getElementById('gh-account');
+  const ghBar=document.getElementById('gh-bar');
+  const shareBtn=document.getElementById('vw-share-btn');
+
+  if(ghUser){
+    // ログイン時：アカウント表示、ログイン促進バー非表示
+    loginBtn.style.display='none';
+    accountEl.style.display='flex';
+    document.getElementById('gh-account-avatar').src=ghUser.avatar_url;
+    document.getElementById('gh-account-name').textContent=ghUser.login;
+    ghBar.style.display='none';
+    if(shareBtn)shareBtn.style.display='';
+  } else {
+    // 非ログイン時：ログインボタン表示、ログイン促進バー表示
+    loginBtn.style.display='';
+    accountEl.style.display='none';
+    ghBar.style.display='';
+    if(shareBtn)shareBtn.style.display='none';
+  }
+}
+
+// Gistにキャラを共有
+async function shareToGist(){
+  if(!ghToken){toast('先にGitHubでログインしてください');return;}
+  const c=chars[cid];
+  if(!c){return;}
+  const btn=document.getElementById('vw-share-btn');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader" aria-hidden="true"></i> 共有中…';
+
+  // 既存GistIDがあれば更新、なければ新規作成
+  const existingGistId=c._gistId||null;
+  const payload={
+    description:`ネジクレネジマキ キャラクター: ${c.name||'名無し'}`,
+    public:false, // secret gist
+    files:{
+      'character.json':{content:JSON.stringify({...c,_gistId:undefined},null,2)},
+      'meta.json':{content:JSON.stringify({appVersion:'v10',createdBy:ghUser?.login,updatedAt:new Date().toISOString()},null,2)},
+    },
+  };
+
+  try{
+    let res,data;
+    if(existingGistId){
+      res=await fetch(`https://api.github.com/gists/${existingGistId}`,{
+        method:'PATCH',
+        headers:{Authorization:'token '+ghToken,'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+      });
+    } else {
+      res=await fetch('https://api.github.com/gists',{
+        method:'POST',
+        headers:{Authorization:'token '+ghToken,'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+      });
+    }
+    data=await res.json();
+    if(data.id){
+      // GistIDをキャラデータに保存
+      chars[cid]._gistId=data.id;
+      await store();
+      const shareUrl=`${location.origin}?gist=${data.id}`;
+      // 共有URLをクリップボードにコピー
+      try{await navigator.clipboard.writeText(shareUrl);}catch{}
+      // 共有URLを閲覧モードに表示
+      showShareUrl(shareUrl,data.id);
+      toast('共有URLをコピーしました！');
+    } else {
+      toast('共有に失敗しました: '+(data.message||'不明なエラー'));
+    }
+  } catch(e){
+    toast('通信エラー: '+e.message);
+  }
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-share" aria-hidden="true"></i> 共有';
+}
+
+// 共有URL表示ボックス
+function showShareUrl(url,gistId){
+  // 既存ボックスがあれば削除
+  const old=document.getElementById('vw-share-box');if(old)old.remove();
+  const box=document.createElement('div');
+  box.id='vw-share-box';box.className='gist-share-box';
+  box.innerHTML=`<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><i class="ti ti-link" aria-hidden="true"></i> 共有URL（Secret Gist）</div>
+    <div class="gist-url-row">
+      <input type="text" class="field" value="${url}" readonly onclick="this.select()">
+      <button class="btn sm ac" onclick="navigator.clipboard.writeText('${url}').then(()=>toast('コピーしました'))"><i class="ti ti-copy" aria-hidden="true"></i></button>
+    </div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:5px">URLを知っている人だけが閲覧できます</div>`;
+  // 閲覧モードのKOバナーの前に挿入
+  const vv=document.getElementById('vv');
+  const banner=document.getElementById('vw-ko-banner');
+  vv.insertBefore(box,banner);
+}
+
+// GistからキャラをインポートURL読み込み
+async function loadGistFromUrl(){
+  const params=new URLSearchParams(location.search);
+  const gistId=params.get('gist');
+  if(!gistId)return;
+  pendingGistId=gistId;
+  try{
+    const res=await fetch(`https://api.github.com/gists/${gistId}`);
+    if(!res.ok){toast('Gistの読み込みに失敗しました');return;}
+    const data=await res.json();
+    const fileContent=data.files?.['character.json']?.content;
+    if(!fileContent){toast('キャラデータが見つかりませんでした');return;}
+    const charData=JSON.parse(fileContent);
+    charData._gistId=gistId; // GistIDを保持
+    // インポートバナーを表示
+    const banner=document.getElementById('import-banner');
+    const info=document.getElementById('import-banner-info');
+    info.innerHTML=`<strong>${esc(charData.name||'名無し')}</strong> が共有されています`;
+    banner.classList.add('show');
+    // プレビュー用に一時的に閲覧モードで表示
+    const tempId='_preview_'+gistId;
+    chars[tempId]=charData;
+    openView(tempId);
+    window._previewId=tempId;
+    window._previewData=charData;
+  } catch(e){
+    toast('読み込みエラー: '+e.message);
+  }
+}
+
+// インポート確定
+async function importFromGist(){
+  const data=window._previewData;
+  if(!data)return;
+  const id=uid();
+  chars[id]={...data};
+  delete chars[window._previewId];
+  window._previewId=null;window._previewData=null;
+  await store();
+  renderList();
+  dismissImport();
+  openView(id);
+  toast(data.name+'をリストに追加しました！');
+}
+
+// インポートバナーを閉じる
+function dismissImport(){
+  document.getElementById('import-banner').classList.remove('show');
+  if(window._previewId){
+    delete chars[window._previewId];
+    window._previewId=null;window._previewData=null;
+  }
+  // URLからgistパラメータを除去
+  history.replaceState({},'',location.pathname);
+  backFromView();
+}
+
+// 起動時処理
+(async()=>{
+  // OAuthコールバック処理
+  const wasCallback=await handleOAuthCallback();
+  // GistURLからの読み込み
+  await loadGistFromUrl();
+  // ログイン済みならユーザー情報取得
+  if(ghToken){
+    ghUser=await fetchGhUser();
+  }
+  renderGhBar();
+})();
+</script>
+
 </body>
 </html>
